@@ -27,7 +27,6 @@ async function runWithApiKeyRotation<T>(
   for (const key of apiKeys) {
     try {
       const ai = new GoogleGenAI({ apiKey: key });
-      // console.log(`Attempting with key ending in ...${key.slice(-4)}`);
       return await operation(ai);
     } catch (error: any) {
       console.warn(`Key ...${key.slice(-4)} failed:`, error);
@@ -35,14 +34,20 @@ async function runWithApiKeyRotation<T>(
       
       // Check for errors that warrant a retry with a new key
       // 429: Too Many Requests (Quota)
-      // 500/503: Server Errors
-      const isRetryable = error.status === 429 || error.status === 503 || error.status === 500 || (error.message && error.message.includes('429'));
+      // 503: Service Unavailable
+      // 500: Internal Server Error
+      const status = error.status || (error.response ? error.response.status : null);
+      const isRetryable = status === 429 || status === 503 || status === 500 || 
+                          (error.message && (error.message.includes('429') || error.message.includes('Quota')));
       
       if (!isRetryable) {
-        // If it's a Bad Request (400) or Permission Denied (403), do not rotate, just fail.
-        throw error;
+        // If it's a client error like 400 (Bad Request) or 403 (Permission Denied - though sometimes quota is 403), 
+        // strictly speaking we might want to stop, but for a rotation script, 403 might also imply key issues.
+        // For safety in this user context, if it's 400, stop. If 403, maybe rotate? 
+        // Let's assume 400 is prompt error, others are key/server issues.
+        if (status === 400) throw error;
       }
-      // If retryable, loop continues to next key
+      // Continue loop to next key
     }
   }
 
@@ -166,8 +171,7 @@ export const optimizePromptSim = async (input: string, apiKeysStr: string): Prom
 };
 
 export const suggestTagsSim = (input: string): { category: CategoryKey, tag: string }[] => {
-  // Pure local logic is fine for tags, but we could enhance it later.
-  // Keeping local for speed as per user request flow usually implies tag selection is UI driven.
+  // Pure local logic is fine for tags to ensure instant UI response.
   const inputLower = input.toLowerCase();
   const suggestions: { category: CategoryKey, tag: string }[] = [];
 
@@ -197,7 +201,7 @@ export const suggestTagsSim = (input: string): { category: CategoryKey, tag: str
   checkAndPush(mixingPresets, 'mixingPresets');
   checkAndPush(v5Performance, 'v5Performance');
 
-  // Hardcoded simple associations
+  // Hardcoded simple associations for local usage
   if (inputLower.includes('buồn') || inputLower.includes('sad')) {
       suggestions.push({category: 'moods', tag: 'Sad'});
       suggestions.push({category: 'instruments', tag: 'Piano'});
@@ -209,7 +213,6 @@ export const suggestTagsSim = (input: string): { category: CategoryKey, tag: str
 export const generatePromptSim = async (input: string, apiKeysStr: string): Promise<string> => {
      // If we have an optimizer, we essentially used it in handleAutoGenerate. 
      // This function mainly constructs the final string.
-     // However, if we want "Auto Generate" to use AI to build the WHOLE structure:
      
      const apiKeys = parseApiKeys(apiKeysStr);
      if (apiKeys.length > 0) {
@@ -272,7 +275,6 @@ export const generateLyricsSim = async (topic: string, style: string, lang: stri
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   const isSad = style.toLowerCase().includes('sad') || style.toLowerCase().includes('rain');
-  const isEpic = style.toLowerCase().includes('epic') || style.toLowerCase().includes('war');
   
   // (Existing Template Logic simplified for brevity as fallback)
   let content = '';
