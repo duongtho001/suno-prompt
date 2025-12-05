@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suno AI Prompt</title>
+    <title>Đường Thọ AI Prompt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Changed background to standard neumorphic grey */
-            --bg-color: #E0E5EC;
+            /* Changed background to a softer, lighter cloud grey */
+            --bg-color: #ecf0f3;
             --text-main: #4A5568;
             --text-light: #A0AEC0;
             --shadow-light: #ffffff;
-            /* Adjusted shadow to match new background */
-            --shadow-dark: #a3b1c6;
+            /* Softer shadow for the lighter background */
+            --shadow-dark: #d1d9e6;
             --primary: #6D28D9;
         }
         body {
@@ -28,14 +28,14 @@
         /* Neumorphism Utilities */
         .neu-flat {
             background: var(--bg-color);
-            box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
+            box-shadow: 12px 12px 20px var(--shadow-dark), -12px -12px 20px var(--shadow-light);
             border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.4);
         }
         
         .neu-flat-sm {
             background: var(--bg-color);
-            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
             border-radius: 12px;
         }
 
@@ -60,7 +60,7 @@
 
         .neu-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 8px 8px 12px var(--shadow-dark), -8px -8px 12px var(--shadow-light);
+            box-shadow: 8px 8px 14px var(--shadow-dark), -8px -8px 14px var(--shadow-light);
         }
 
         .neu-btn:active, .neu-btn.active {
@@ -84,7 +84,7 @@
         }
 
         .neu-text-shadow {
-            text-shadow: 2px 2px 4px rgba(163, 177, 198, 0.4), -2px -2px 4px rgba(255, 255, 255, 0.8);
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.1), -3px -3px 6px rgba(255,255,255,0.7);
         }
         
         .neu-icon-btn {
@@ -95,7 +95,7 @@
             align-items: center;
             justify-content: center;
             background: var(--bg-color);
-            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            box-shadow: 6px 6px 10px var(--shadow-dark), -6px -6px 10px var(--shadow-light);
             color: var(--text-main);
             transition: all 0.2s ease;
         }
@@ -112,10 +112,10 @@
         ::-webkit-scrollbar-thumb {
             background: #cbd5e0;
             border-radius: 5px;
-            border: 2px solid #E0E5EC;
+            border: 2px solid var(--bg-color);
         }
         ::-webkit-scrollbar-track {
-            background: #E0E5EC;
+            background: var(--bg-color);
         }
 
         /* Toast Animation */
@@ -134,7 +134,9 @@
     "react/": "https://aistudiocdn.com/react@^19.2.1/",
     "react": "https://aistudiocdn.com/react@^19.2.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "@google/genai": "https://esm.run/@google/genai"
+    "@google/genai": "https://esm.run/@google/genai",
+    "vite": "https://aistudiocdn.com/vite@^7.2.6",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }
 }
 </script>

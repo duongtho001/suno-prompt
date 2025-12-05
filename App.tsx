@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   genres, instruments, effects, moods, vocals, structure, production, demoTemplates, 
@@ -9,7 +8,7 @@ import { analyzeImageSim, optimizePromptSim, generateLyricsSim, suggestTagsSim, 
 import { 
   Wand2, Music, Mic, Layers, Settings, PlayCircle, Copy, Trash2, 
   Image as ImageIcon, Sparkles, Loader2, Info, Languages, Rocket, Zap, Lightbulb,
-  Sliders, FileAudio, AlignLeft, PlusCircle, Tv, Gauge, Heart, X, CreditCard, Check, Share2, HelpCircle, BookOpen, ArrowRight, Star
+  Sliders, FileAudio, AlignLeft, PlusCircle, Tv, Gauge, Heart, X, Check, Share2, HelpCircle, BookOpen, ArrowRight, Star
 } from 'lucide-react';
 
 const categoryNames: Record<CategoryKey, string> = {
@@ -205,680 +204,429 @@ const App: React.FC = () => {
   };
 
   const handleAutoGenerate = async () => {
-    if (!aiInput.trim()) {
-        showFeedback('Vui lòng nhập từ khóa ý tưởng', 'error');
-        topicRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        aiInputRef.current?.focus();
-        return;
-    }
-    const generated = await generatePromptSim(aiInput);
-    setOptimizedIdea(generated);
-    handleSuggestTags(); 
-    showFeedback('AI đã tự động tạo prompt đầy đủ!');
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAnalyzeImage = async () => {
-    if (!fileInputRef.current?.files?.[0]) return showFeedback('Vui lòng tải lên hình ảnh trước', 'error');
-    setIsAnalyzingImage(true);
+    if (!aiInput.trim()) return showFeedback('Vui lòng nhập ý tưởng', 'error');
+    setIsAnalyzingImage(true); // Re-use spinner state for visual effect
     try {
-      const result = await analyzeImageSim(fileInputRef.current.files[0]);
-      setAiInput(result.topic);
-      if (result.tags && result.tags.length > 0) {
-           setSelections(prev => {
-                const next = {...prev};
-                return next;
-           });
-           setOptimizedIdea(`Song about ${result.topic}. Style: ${result.tags.join(', ')}`);
-      } else {
-           setOptimizedIdea(`Song about ${result.topic}.`);
-      }
-      showFeedback('Phân tích hình ảnh hoàn tất!');
-      
-      // Auto-scroll to Prompt Output (Result)
-      setTimeout(() => {
-        promptRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-
+        const result = await generatePromptSim(aiInput);
+        // Parse result if needed, but here we just simulate optimization
+        setOptimizedIdea(result);
+        handleSuggestTags(); // Also suggest tags
+        showFeedback('Đã tạo Prompt AI!');
     } catch (e) {
-      console.error(e);
-      showFeedback('Phân tích thất bại', 'error');
+        showFeedback('Lỗi tạo prompt', 'error');
     } finally {
-      setIsAnalyzingImage(false);
+        setIsAnalyzingImage(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImagePreview(URL.createObjectURL(file));
+      setIsAnalyzingImage(true);
+      showFeedback('Đang phân tích hình ảnh...');
+      
+      try {
+        const result = await analyzeImageSim(file);
+        setAiInput(result.topic);
+        // Map strings to categories (simple simulation logic)
+        // In a real app, logic would map result.tags to specific categories
+        // Here we just add to moods or genres if they match, or just set topic
+        showFeedback('Đã phân tích xong!');
+      } catch (error) {
+        showFeedback('Lỗi phân tích hình ảnh', 'error');
+      } finally {
+        setIsAnalyzingImage(false);
+      }
     }
   };
 
   const handleGenerateLyrics = async () => {
-    // 1. Check prompt (Styles)
-    if (!generatedPrompt) {
-        showFeedback('Vui lòng chọn thẻ phong cách trước (Style)', 'error');
-        styleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-    }
-    // 2. Check Topic (Input)
-    if (!aiInput && !optimizedIdea) {
-        showFeedback('Vui lòng nhập chủ đề hoặc ý tưởng', 'error');
-        topicRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        aiInputRef.current?.focus();
-        return;
-    }
-    
-    let langToUse = lyricsLang;
-    if (lyricsLang === 'other') {
-      if (!customLyricsLang.trim()) return showFeedback('Vui lòng nhập ngôn ngữ tùy chỉnh', 'error');
-      langToUse = customLyricsLang.trim();
-    }
-    
+    if (!aiInput && !generatedPrompt) return showFeedback('Vui lòng nhập chủ đề hoặc tạo prompt trước', 'error');
     setIsGeneratingLyrics(true);
     try {
-      const topic = aiInput || 'Untitled';
-      const lyrics = await generateLyricsSim(topic, generatedPrompt, langToUse); 
+      const lang = lyricsLang === 'custom' ? customLyricsLang : lyricsLang;
+      const lyrics = await generateLyricsSim(aiInput || 'Tình yêu', generatedPrompt || 'Pop, Sad', lang);
       setLyricsOutput(lyrics);
-      showFeedback('Tạo lời bài hát hoàn tất!');
-    } catch (e) {
-      showFeedback('Tạo lời bài hát thất bại', 'error');
+      showFeedback('Đã viết xong lời bài hát!');
+    } catch (error) {
+      showFeedback('Lỗi tạo lời', 'error');
     } finally {
       setIsGeneratingLyrics(false);
     }
   };
 
-  const loadTemplate = (template: typeof demoTemplates[0]) => {
-    clearAll();
-    const newSel = { ...selections }; 
-    (Object.keys(template.tags) as CategoryKey[]).forEach(cat => {
-      if (template.tags[cat]) {
-        newSel[cat] = template.tags[cat]!;
-      }
-    });
-    setSelections(newSel);
-    showFeedback(`Đã tải mẫu: ${template.name}`);
+  const applyDemoTemplate = (template: any) => {
+      // Clear current
+      setSelections({
+        genres: [], production: [], instruments: [], moods: [], vocals: [], structure: [], effects: [],
+        v5Advanced: [], mixingPresets: [], animeDrama: [], v5Performance: []
+      });
+      
+      // Apply new
+      setTimeout(() => {
+          setSelections(prev => {
+              const next = { ...prev };
+              Object.keys(template.tags).forEach(cat => {
+                 if (cat in next) {
+                     (next as any)[cat] = template.tags[cat];
+                 }
+              });
+              return next;
+          });
+          showFeedback(`Đã áp dụng mẫu: ${template.name}`);
+      }, 50);
   };
 
-  // Render Helpers
-  const renderTagSection = (title: string, icon: React.ReactNode, category: CategoryKey, dataMap: Record<string, string>, extraClass = "") => (
-    <div className={`neu-flat p-6 mb-8 ${extraClass}`}>
-      <h3 className="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2 neu-text-shadow">
-        {icon} {title}
-      </h3>
-      <div className="flex flex-wrap gap-3">
-        {Object.entries(dataMap).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => toggleTag(category, key)}
-            className={`px-4 py-2 text-sm font-semibold transition-all duration-200 ${
-              selections[category].includes(key)
-                ? 'neu-pressed active text-purple-600'
-                : 'neu-btn text-gray-600 hover:text-purple-500'
-            }`}
-          >
-            {key} <span className="text-xs opacity-60 ml-1 font-normal">{label}</span>
-          </button>
-        ))}
+  // UI Components
+  const SectionHeader = ({ icon: Icon, title, color = "text-gray-700" }: any) => (
+    <div className="flex items-center gap-3 mb-4 mt-8 pb-2 border-b border-gray-200">
+      <div className={`p-2 rounded-lg neu-flat-sm ${color}`}>
+        <Icon size={20} />
       </div>
+      <h3 className={`text-lg font-bold ${color}`}>{title}</h3>
     </div>
   );
 
-  const renderGroupedSection = (title: string, icon: React.ReactNode, category: CategoryKey, groupedData: Record<string, Record<string, string>>, extraClass = "") => (
-    <div className={`neu-flat p-6 mb-8 ${extraClass}`}>
-      <h3 className="text-xl font-bold text-gray-700 mb-5 flex items-center gap-2 neu-text-shadow">
-        {icon} {title}
-      </h3>
-      <div className="space-y-6">
-        {Object.entries(groupedData).map(([groupName, items]) => (
-          <div key={groupName}>
-            <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 ml-2">{groupName}</h4>
-            <div className="flex flex-wrap gap-3">
-              {Object.entries(items).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => toggleTag(category, key)}
-                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+  const TagGroup = ({ category, data, icon }: { category: CategoryKey, data: any, icon: any }) => (
+    <div className="mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">{categoryNames[category]}</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {Object.entries(data).map(([key, value]) => {
+           // Check if it's a nested group or flat string
+           const isGroup = typeof value === 'object' && value !== null;
+           if (isGroup) {
+               return (
+                   <div key={key} className="w-full mb-2">
+                       <h4 className="text-xs font-semibold text-gray-400 mb-2 ml-1">{key}</h4>
+                       <div className="flex flex-wrap gap-2">
+                           {Object.entries(value as any).map(([subKey, subLabel]) => (
+                               <button
+                                   key={subKey}
+                                   onClick={() => toggleTag(category, subKey)}
+                                   className={`px-3 py-1.5 rounded-full text-sm transition-all duration-200 border ${
+                                       selections[category].includes(subKey)
+                                       ? 'bg-purple-600 text-white border-purple-600 shadow-md transform scale-105'
+                                       : 'neu-btn hover:text-purple-600 border-transparent'
+                                   }`}
+                               >
+                                   {subLabel as string}
+                               </button>
+                           ))}
+                       </div>
+                   </div>
+               );
+           }
+           return (
+            <button
+                key={key}
+                onClick={() => toggleTag(category, key)}
+                className={`px-3 py-1.5 rounded-full text-sm transition-all duration-200 border ${
                     selections[category].includes(key)
-                      ? 'neu-pressed active text-purple-600'
-                      : 'neu-btn text-gray-600 hover:text-purple-500'
-                  }`}
-                >
-                  {key} <span className="text-xs opacity-60 ml-1 font-normal">{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-md transform scale-105'
+                    : 'neu-btn hover:text-purple-600 border-transparent'
+                }`}
+            >
+                {value as string}
+            </button>
+           );
+        })}
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen pb-20 pt-8 px-4 sm:px-6 lg:px-8">
-      {/* Fixed Toast Notification */}
+    <div className="min-h-screen pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+      {/* Toast Feedback */}
       {feedbackMsg && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] toast-enter">
-            <div className={`px-6 py-3 rounded-full font-bold shadow-2xl backdrop-blur-md border border-white/20 flex items-center gap-2 ${
-                feedbackMsg.includes('lỗi') || feedbackMsg.includes('thất bại') 
-                ? 'bg-red-500/90 text-white' 
-                : feedbackMsg.includes('Đã bỏ')
-                    ? 'bg-gray-700/90 text-white'
-                    : 'bg-emerald-600/90 text-white'
-            }`}>
-               {feedbackMsg.includes('thành công') || feedbackMsg.includes('hoàn tất') || feedbackMsg.includes('Đã chọn') ? <Check size={18} /> : <Info size={18} />}
-               {feedbackMsg}
-            </div>
-        </div>
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 toast-enter">
+              <div className="neu-flat px-6 py-3 rounded-full flex items-center gap-3 bg-gray-800 text-white border border-gray-700">
+                  {feedbackMsg.includes('Lỗi') ? <X size={18} className="text-red-400"/> : <Check size={18} className="text-green-400"/>}
+                  <span className="font-medium text-sm">{feedbackMsg}</span>
+              </div>
+          </div>
       )}
 
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Header */}
-        <header className="text-center mb-12 relative">
-          <div className="inline-block p-4 neu-flat rounded-full mb-4">
-             <Music size={40} className="text-purple-600" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-700 mb-3 neu-text-shadow tracking-tight">
-            Suno AI Prompt
-          </h1>
-          <p className="text-gray-500 max-w-2xl mx-auto mb-8 font-medium">
-            Trình tạo prompt tối ưu cho âm nhạc.
-          </p>
-          
-          <div className="flex flex-wrap justify-center gap-4">
-            <button 
-              onClick={() => setShowGuide(true)}
-              className="neu-btn px-6 py-3 text-blue-600 font-bold hover:text-blue-700 flex items-center gap-2"
-            >
-              <BookOpen size={20} />
-              <span>Hướng dẫn</span>
+      {/* Header */}
+      <header className="py-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl neu-flat flex items-center justify-center text-purple-600">
+                <Music size={32} strokeWidth={2.5} />
+            </div>
+            <div>
+                <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 neu-text-shadow">
+                    Đường Thọ AI
+                </h1>
+                <p className="text-gray-500 font-medium text-sm">Trình tạo Prompt & Lời bài hát Suno v5</p>
+            </div>
+        </div>
+        <div className="flex gap-3">
+             <button onClick={clearAll} className="neu-btn px-4 py-2 text-sm font-semibold text-red-500 hover:text-red-600">
+                <Trash2 size={16} className="mr-2" />
+                Làm mới
             </button>
-          </div>
-        </header>
+        </div>
+      </header>
 
-        <div className="flex flex-col lg:flex-row gap-10">
-          
-          {/* Left Column: Controls */}
-          <div className="lg:w-3/5 space-y-8">
-
-            {/* AI Assistant Panel */}
-            <section className="neu-flat p-6 relative overflow-hidden" ref={topicRef}>
-               <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-                 <Zap size={100} />
-               </div>
-              <h2 className="text-2xl font-bold text-gray-700 mb-6 flex items-center gap-3">
-                 <span className="neu-icon-btn"><Zap size={20} /></span> 
-                 Trợ lý Gợi ý AI
-              </h2>
-              
-              <div className="space-y-5">
-                <input 
-                  type="text" 
-                  ref={aiInputRef}
-                  value={aiInput}
-                  onChange={(e) => setAiInput(e.target.value)}
-                  placeholder="Nhập ý tưởng của bạn (ví dụ: ngày mưa, trận chiến sử thi)..."
-                  className="w-full neu-input px-5 py-4 text-lg text-gray-700 placeholder-gray-400"
-                />
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button 
-                      onClick={handleSuggestTags}
-                      className="neu-btn py-3 px-4 font-semibold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-2"
-                    >
-                      <Lightbulb size={18} /> Gợi ý thẻ
-                    </button>
-                    <button 
-                      onClick={handleAutoGenerate}
-                      className="neu-btn py-3 px-4 font-bold text-purple-600 hover:text-purple-700 flex items-center justify-center gap-2"
-                    >
-                      <Sparkles size={18} /> Tự động tạo
-                    </button>
-                    <button 
-                      onClick={handleOptimizeIdea}
-                      className="neu-btn py-3 px-4 font-semibold text-green-600 hover:text-green-700 flex items-center justify-center gap-2"
-                    >
-                      <Wand2 size={18} /> Tối ưu ý tưởng
-                    </button>
-                </div>
-                
-                {/* Image to Song Section */}
-                <div className="pt-4 mt-2">
-                   <h3 className="text-lg font-bold text-gray-600 mb-4 flex items-center gap-2">
-                    <ImageIcon size={20} /> Cảm hứng từ Ảnh AI
-                   </h3>
-                   <div className="neu-pressed p-4 rounded-2xl space-y-4">
-                        <input 
-                          type="file" 
-                          accept="image/*"
-                          ref={fileInputRef}
-                          onChange={handleImageUpload}
-                          className="block w-full text-sm text-gray-500
-                            file:mr-4 file:py-2 file:px-4
-                            file:rounded-full file:border-0
-                            file:text-sm file:font-semibold
-                            file:bg-gray-200 file:text-gray-700
-                            file:shadow-sm
-                            hover:file:bg-gray-300
-                            file:cursor-pointer transition-colors"
-                        />
-                      {imagePreview && (
-                        <div className="neu-flat-sm p-2">
-                            <img src={imagePreview} alt="Preview" className="w-full h-48 rounded-lg object-contain" />
-                        </div>
-                      )}
-                      <button 
-                        onClick={handleAnalyzeImage}
-                        disabled={isAnalyzingImage}
-                        className="w-full neu-btn py-3 text-emerald-600 font-bold hover:text-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
-                      >
-                        {isAnalyzingImage ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />} 
-                        Phân tích ảnh
-                      </button>
-                   </div>
-                </div>
-              </div>
-            </section>
-
-             {/* Pro Templates */}
-             <section className="neu-flat p-6">
-              <h3 className="text-xl font-bold text-gray-700 mb-5 flex items-center gap-3">
-                <span className="neu-icon-btn"><Rocket size={20} /></span> 
-                Mẫu Pro (Templates)
-              </h3>
-              <div className="flex flex-wrap gap-3">
-                {demoTemplates.map(tpl => (
-                  <button 
-                    key={tpl.name}
-                    onClick={() => loadTemplate(tpl)}
-                    className="neu-btn px-4 py-2 text-sm font-semibold text-gray-600 hover:text-purple-600 transition-transform active:scale-95"
-                  >
-                    {tpl.name}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-             {/* J-Pop / Anime Special Zone */}
-             {renderGroupedSection(
-                'Khu vực Anime & Phim Nhật', 
-                <Tv size={20} className="text-pink-500" />, 
-                'animeDrama', 
-                animeDrama
-             )}
-
-            {/* V5 Special Controls */}
-            <div className="neu-flat p-6 relative overflow-hidden">
-                <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
-                <h3 className="text-xl font-bold text-gray-700 mb-5 flex items-center gap-3">
-                    <span className="neu-icon-btn"><Sliders size={20} /></span> 
-                    Tham số & Cài đặt Suno v5
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div>
-                        <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Meta & Kỹ thuật</h4>
-                        <div className="flex flex-wrap gap-3">
-                             {Object.entries(v5Advanced).map(([key, label]) => (
-                                <button
-                                    key={key}
-                                    onClick={() => toggleTag('v5Advanced', key)}
-                                    className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all duration-200 ${
-                                    selections.v5Advanced.includes(key)
-                                        ? 'neu-pressed active text-amber-600'
-                                        : 'neu-btn text-gray-500'
-                                    }`}
-                                >
-                                    {key}
-                                </button>
-                             ))}
-                        </div>
-                     </div>
-                     <div>
-                         <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Mixing Presets</h4>
-                         <div className="flex flex-wrap gap-3">
-                             {Object.entries(mixingPresets).map(([key, label]) => (
-                                <button
-                                    key={key}
-                                    onClick={() => toggleTag('mixingPresets', key)}
-                                    className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all duration-200 ${
-                                    selections.mixingPresets.includes(key)
-                                        ? 'neu-pressed active text-rose-600'
-                                        : 'neu-btn text-gray-500'
-                                    }`}
-                                >
-                                    {key}
-                                </button>
-                             ))}
-                        </div>
-                     </div>
-                </div>
-                
-                {/* NEW V5 Performance Section */}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                    <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase flex items-center gap-1">
-                      <Gauge size={14} /> V5 Performance (Tăng cường chi tiết)
-                    </h4>
-                    <div className="flex flex-wrap gap-3">
-                         {Object.entries(v5Performance).map(([key, label]) => (
-                            <button
-                                key={key}
-                                onClick={() => toggleTag('v5Performance', key)}
-                                className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-200 ${
-                                selections.v5Performance.includes(key)
-                                    ? 'neu-pressed active text-emerald-600'
-                                    : 'neu-btn text-gray-600'
-                                }`}
-                            >
-                                {key}
-                            </button>
-                         ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* Tag Selection Areas */}
-            <div ref={styleRef}>
-                {renderGroupedSection('Thể loại (Genres)', <Music size={20} />, 'genres', genres)}
-                {renderGroupedSection('Nhạc cụ (Instruments)', <Settings size={20} />, 'instruments', instruments)}
-                {renderTagSection('Cảm xúc (Moods)', <Sparkles size={20} />, 'moods', moods)}
-                {renderGroupedSection('Hiệu ứng & Hòa âm (Effects)', <Layers size={20} />, 'effects', effects)}
-                {renderGroupedSection('Giọng hát (Vocals)', <Mic size={20} />, 'vocals', vocals)}
-                {renderTagSection('Sản xuất (Production)', <Settings size={20} />, 'production', production)}
-                {renderTagSection('Cấu trúc (Structure)', <Layers size={20} />, 'structure', structure)}
-            </div>
-
-          </div>
-
-          {/* Right Column: Sticky Result Panel */}
-          <div className="lg:w-2/5">
-            <div className="sticky top-8 space-y-8">
-              
-              {/* Prompt Output */}
-              <div ref={promptRef} className="neu-flat p-6 flex flex-col relative">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-2xl font-bold text-gray-700 neu-text-shadow">Prompt Output</h2>
-                  <div className="flex gap-3">
-                     <button 
-                      onClick={() => copyToClipboard(generatedPrompt)}
-                      className="neu-btn px-4 py-2 text-indigo-600 hover:text-indigo-700 font-bold text-sm flex items-center gap-2"
-                    >
-                      <Copy size={16} /> Sao chép
-                    </button>
-                    <button 
-                      onClick={clearAll}
-                      className="neu-btn px-4 py-2 text-red-500 hover:text-red-600 font-bold text-sm flex items-center gap-2"
-                    >
-                      <Trash2 size={16} /> Xóa
-                    </button>
-                  </div>
-                </div>
-                
-                <textarea 
-                  value={generatedPrompt}
-                  readOnly
-                  className="w-full h-48 neu-input p-4 resize-none font-mono text-sm leading-relaxed text-gray-700"
-                  placeholder="Chọn các thẻ để tạo prompt..."
-                />
-              </div>
-
-              {/* Lyrics Generator with V5 Controls */}
-              <div className="neu-flat p-6">
-                <div className="flex justify-between items-center mb-5">
-                  <h2 className="text-xl font-bold text-gray-700 flex items-center gap-3">
-                    <span className="neu-icon-btn"><FileAudio size={20} /></span>
-                    Lời & Cấu trúc
-                  </h2>
-                  <button
-                    onClick={injectMetaTags}
-                    className="neu-btn px-3 py-1.5 text-xs font-bold text-amber-600 flex items-center gap-1"
-                  >
-                    <PlusCircle size={14} /> Chèn Meta
-                  </button>
-                </div>
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* Left Column: Input & Controls */}
+        <div className="lg:col-span-5 space-y-8">
+            
+            {/* 1. Idea Input */}
+            <div className="neu-flat p-6" ref={topicRef}>
+                <SectionHeader icon={Lightbulb} title="Ý tưởng bài hát" color="text-amber-600" />
                 
                 <div className="space-y-4">
-                  
-                  {/* Structure Toolbar */}
-                  <div className="neu-pressed p-3 flex flex-wrap gap-2 justify-center">
-                      <span className="text-xs text-gray-400 w-full text-center font-bold uppercase mb-1">Chèn nhanh (Quick Insert)</span>
-                      {['[Intro]', '[Verse]', '[Chorus]', '[Bridge]', '[Solo]', '[Outro]', '[Break]', '[Instrumental]'].map(tag => (
-                          <button
-                            key={tag}
-                            onClick={() => insertStructureTag(tag)}
-                            className="px-2 py-1 rounded text-xs font-bold bg-gray-200 text-gray-600 hover:bg-gray-300 shadow-sm"
-                          >
-                              {tag}
-                          </button>
-                      ))}
-                  </div>
-
-                  {/* Template Selector */}
-                  <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">
-                       {structureTemplates.map(tpl => (
-                           <button
-                             key={tpl.name}
-                             onClick={() => applyStructureTemplate(tpl.content)}
-                             className="neu-btn whitespace-nowrap px-3 py-1.5 text-xs text-gray-600 font-medium"
-                           >
-                               📄 {tpl.name}
-                           </button>
-                       ))}
-                  </div>
-
-                  {/* Language Selector */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="neu-pressed rounded-xl px-2">
-                        <select
-                        value={lyricsLang}
-                        onChange={(e) => setLyricsLang(e.target.value)}
-                        className="w-full bg-transparent text-gray-700 h-10 text-sm outline-none font-bold"
-                        >
-                        <option value="vi">Tiếng Việt</option>
-                        <option value="en">English</option>
-                        <option value="ja">Japanese</option>
-                        <option value="ko">Korean</option>
-                        <option value="other">Khác</option>
-                        </select>
+                    <div className="relative">
+                        <input 
+                            ref={aiInputRef}
+                            type="text" 
+                            value={aiInput}
+                            onChange={(e) => setAiInput(e.target.value)}
+                            placeholder="Mô tả bài hát (VD: Một bản tình ca buồn dưới mưa ở Sài Gòn...)"
+                            className="w-full neu-input p-4 pl-12 text-lg font-medium"
+                        />
+                        <Sparkles className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                        {aiInput && (
+                            <button onClick={() => setAiInput('')} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <X size={16} />
+                            </button>
+                        )}
                     </div>
-                     <button 
-                        onClick={handleGenerateLyrics}
-                        disabled={isGeneratingLyrics}
-                        className="neu-btn text-teal-600 font-bold h-10 flex justify-center items-center gap-2 text-sm disabled:opacity-50"
-                    >
-                        {isGeneratingLyrics ? <Loader2 className="animate-spin" size={16} /> : <Wand2 size={16} />}
-                        AI Tạo lời
-                    </button>
-                  </div>
-                   {lyricsLang === 'other' && (
-                      <input 
-                        type="text"
-                        value={customLyricsLang}
-                        onChange={(e) => setCustomLyricsLang(e.target.value)}
-                        placeholder="Nhập ngôn ngữ..."
-                        className="w-full neu-input p-3 text-sm"
-                      />
-                    )}
 
-                  <textarea 
-                    ref={lyricsRef}
-                    value={lyricsOutput}
-                    onChange={(e) => setLyricsOutput(e.target.value)}
-                    className="w-full h-64 neu-input p-4 font-mono text-sm leading-relaxed text-gray-700 resize-none"
-                    placeholder="Lời bài hát sẽ xuất hiện ở đây..."
-                  />
-                  <button 
-                    onClick={() => copyToClipboard(lyricsOutput)}
-                    className="w-full neu-btn py-3 text-cyan-600 font-bold"
-                  >
-                    Sao chép lời
-                  </button>
+                    <div className="flex gap-3 overflow-x-auto pb-2">
+                        <button 
+                            onClick={handleOptimizeIdea}
+                            className="neu-btn flex-1 py-3 px-4 font-bold text-purple-600 hover:bg-purple-50"
+                        >
+                            <Wand2 size={18} className="mr-2" />
+                            Tối ưu ý tưởng
+                        </button>
+                        <button 
+                            onClick={handleSuggestTags}
+                            className="neu-btn flex-1 py-3 px-4 font-bold text-indigo-600 hover:bg-indigo-50"
+                        >
+                            <Zap size={18} className="mr-2" />
+                            Gợi ý thẻ
+                        </button>
+                    </div>
+
+                    {/* Image Upload */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                        <label className="flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed border-gray-300 hover:border-purple-400 cursor-pointer transition-colors bg-gray-50/50">
+                            {isAnalyzingImage ? (
+                                <div className="flex flex-col items-center text-purple-600 animate-pulse">
+                                    <Loader2 size={32} className="animate-spin mb-2" />
+                                    <span className="text-sm font-semibold">Đang phân tích ảnh...</span>
+                                </div>
+                            ) : imagePreview ? (
+                                <div className="relative w-full h-full p-2">
+                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-contain rounded-lg" />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity rounded-lg">
+                                        <span className="text-white font-medium text-sm">Thay đổi ảnh</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center text-gray-400">
+                                    <ImageIcon size={32} className="mb-2" />
+                                    <span className="text-sm font-medium">Tải ảnh lên để lấy cảm hứng</span>
+                                </div>
+                            )}
+                            <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                        </label>
+                    </div>
                 </div>
-              </div>
             </div>
-          </div>
+
+            {/* 2. Style & Instrument Selection */}
+            <div className="neu-flat p-6" ref={styleRef}>
+                <SectionHeader icon={Sliders} title="Phong cách & Nhạc cụ" color="text-blue-600" />
+                
+                {/* Accordion-like structure for categories */}
+                <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                    <TagGroup category="genres" data={genres} icon={Music} />
+                    <TagGroup category="moods" data={moods} icon={Heart} />
+                    <TagGroup category="animeDrama" data={animeDrama} icon={Tv} />
+                    <TagGroup category="instruments" data={instruments} icon={Mic} />
+                    <TagGroup category="v5Performance" data={v5Performance} icon={Star} />
+                    <TagGroup category="production" data={production} icon={Layers} />
+                    <TagGroup category="mixingPresets" data={mixingPresets} icon={Settings} />
+                    <TagGroup category="effects" data={effects} icon={Sparkles} />
+                    <TagGroup category="vocals" data={vocals} icon={Mic} />
+                    <TagGroup category="structure" data={structure} icon={AlignLeft} />
+                    <TagGroup category="v5Advanced" data={v5Advanced} icon={Gauge} />
+                </div>
+            </div>
+            
+            {/* Quick Templates */}
+             <div className="neu-flat p-6">
+                <SectionHeader icon={BookOpen} title="Mẫu có sẵn (Templates)" color="text-pink-600" />
+                <div className="grid grid-cols-2 gap-3">
+                    {demoTemplates.map((tpl, idx) => (
+                        <button 
+                            key={idx}
+                            onClick={() => applyDemoTemplate(tpl)}
+                            className="neu-btn py-2 px-3 text-xs font-semibold text-gray-600 hover:text-purple-600 text-left truncate"
+                            title={tpl.name}
+                        >
+                            {tpl.name}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
         </div>
 
-        {/* Footer */}
-        <footer className="mt-16 text-center pb-8 border-t border-gray-300 pt-8">
-            <p className="text-gray-500 font-bold neu-text-shadow">
-               Designed & Developed by <span className="text-purple-600 font-bold decoration-2 underline-offset-4">Đường Thọ</span>
-            </p>
-        </footer>
+        {/* Right Column: Output */}
+        <div className="lg:col-span-7 space-y-8">
+            
+            {/* Result Prompt */}
+            <div className="neu-flat p-6 relative" ref={promptRef}>
+                <div className="absolute top-4 right-4">
+                     <button onClick={() => copyToClipboard(generatedPrompt)} className="neu-icon-btn text-purple-600" title="Sao chép">
+                        <Copy size={20} />
+                     </button>
+                </div>
+                
+                <SectionHeader icon={Rocket} title="Prompt hoàn chỉnh" color="text-purple-600" />
+                
+                <div className="neu-pressed p-4 rounded-xl bg-gray-50 min-h-[160px]">
+                    {generatedPrompt ? (
+                        <p className="text-gray-700 leading-relaxed font-medium text-lg font-mono whitespace-pre-wrap">
+                            {generatedPrompt}
+                        </p>
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-60">
+                            <Music size={40} className="mb-2" />
+                            <p>Chọn các thẻ bên trái hoặc nhập ý tưởng để tạo Prompt...</p>
+                        </div>
+                    )}
+                </div>
+                
+                <div className="mt-4 flex flex-wrap gap-2 justify-end">
+                     <div className="text-xs text-gray-400 italic mr-auto flex items-center">
+                        <Info size={14} className="mr-1" />
+                        Đã tối ưu cho Suno v5
+                     </div>
+                </div>
+            </div>
+
+            {/* Lyrics Generator */}
+            <div className="neu-flat p-6">
+                <div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-4 mt-2">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg neu-flat-sm text-green-600">
+                            <FileAudio size={20} />
+                        </div>
+                        <h3 className="text-lg font-bold text-green-600">Trình tạo lời bài hát (Lyrics)</h3>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                        <select 
+                            value={lyricsLang} 
+                            onChange={(e) => setLyricsLang(e.target.value)}
+                            className="neu-flat-sm px-3 py-1.5 text-sm font-semibold text-gray-600 outline-none bg-transparent"
+                        >
+                            <option value="vi">Tiếng Việt</option>
+                            <option value="en">English</option>
+                            <option value="ja">Japanese</option>
+                            <option value="custom">Khác...</option>
+                        </select>
+                        {lyricsLang === 'custom' && (
+                             <input 
+                                type="text" 
+                                placeholder="Nhập ngôn ngữ..." 
+                                value={customLyricsLang}
+                                onChange={(e) => setCustomLyricsLang(e.target.value)}
+                                className="w-24 neu-input px-2 py-1 text-sm"
+                             />
+                        )}
+                        <button 
+                            onClick={handleGenerateLyrics}
+                            disabled={isGeneratingLyrics}
+                            className="neu-btn px-4 py-1.5 text-sm font-bold text-green-600 hover:text-green-700 disabled:opacity-50"
+                        >
+                            {isGeneratingLyrics ? <Loader2 size={16} className="animate-spin" /> : <div className="flex items-center"><Sparkles size={16} className="mr-1"/> Viết lời AI</div>}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Lyrics Tools */}
+                    <div className="md:col-span-1 space-y-4">
+                        <div>
+                            <h4 className="text-xs font-bold text-gray-400 uppercase mb-2">Chèn thẻ cấu trúc</h4>
+                            <div className="flex flex-wrap gap-2">
+                                {['[Intro]', '[Verse]', '[Chorus]', '[Bridge]', '[Outro]', '[Solo]', '[Instrumental]'].map(tag => (
+                                    <button 
+                                        key={tag}
+                                        onClick={() => insertStructureTag(tag)}
+                                        className="neu-btn px-2 py-1 text-xs font-medium hover:text-purple-600"
+                                    >
+                                        {tag}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 className="text-xs font-bold text-gray-400 uppercase mb-2">Mẫu cấu trúc bài hát</h4>
+                            <div className="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                                {structureTemplates.map((tpl, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => applyStructureTemplate(tpl.content)}
+                                        className="w-full text-left neu-btn px-3 py-2 text-xs font-medium hover:text-purple-600 truncate"
+                                    >
+                                        {tpl.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                         <button 
+                            onClick={injectMetaTags}
+                            className="w-full neu-btn py-2 text-xs font-bold text-blue-600 mt-2"
+                        >
+                            Chèn Meta Tags (V5)
+                        </button>
+                    </div>
+
+                    {/* Editor */}
+                    <div className="md:col-span-2 relative">
+                         <div className="absolute top-2 right-2 z-10">
+                            <button onClick={() => copyToClipboard(lyricsOutput)} className="p-2 bg-white/50 hover:bg-white rounded-full shadow-sm transition-all text-gray-600">
+                                <Copy size={16} />
+                            </button>
+                        </div>
+                        <textarea
+                            ref={lyricsRef}
+                            value={lyricsOutput}
+                            onChange={(e) => setLyricsOutput(e.target.value)}
+                            placeholder="Lời bài hát sẽ hiển thị ở đây..."
+                            className="w-full h-[500px] neu-input p-4 font-mono text-sm leading-relaxed resize-none focus:ring-2 ring-purple-500/20"
+                        />
+                    </div>
+                </div>
+            </div>
+
+        </div>
       </div>
 
-      {/* Welcome Modal */}
-      {showWelcome && (
-        <div 
-          onClick={() => setShowWelcome(false)}
-          className="fixed inset-0 bg-gray-200/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all"
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="neu-flat p-8 max-w-lg w-full relative animate-in zoom-in-95 duration-300"
-          >
-            <button 
-              onClick={() => setShowWelcome(false)}
-              className="absolute top-4 right-4 neu-icon-btn w-10 h-10 text-gray-500 hover:text-red-500"
-            >
-              <X size={20} />
-            </button>
+      {/* Footer */}
+      <footer className="mt-16 py-8 border-t border-gray-200 text-center">
+          <p className="text-gray-500 font-medium">
+            Designed & Developed by <span className="text-purple-600 font-bold">Đường Thọ</span>
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+              © {new Date().getFullYear()} Đường Thọ AI. Optimized for Suno v5.
+          </p>
+      </footer>
 
-            <div className="text-center mb-6">
-                <div className="neu-icon-btn w-16 h-16 mx-auto mb-4 text-purple-600">
-                    <Star className="fill-current w-8 h-8" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-700 neu-text-shadow">Chào mừng bạn! 🎉</h2>
-                <p className="text-gray-500 mt-2 font-medium">Khám phá công cụ tạo nhạc AI tối ưu nhất.</p>
-            </div>
-
-            <div className="space-y-4 mb-8">
-                <div className="flex items-start gap-4 p-3 neu-pressed rounded-xl bg-gray-50/50">
-                    <div className="p-2 bg-blue-100 text-blue-600 rounded-full shrink-0"><Zap size={20} /></div>
-                    <div>
-                        <h4 className="font-bold text-gray-700">AI Gợi ý Thông minh</h4>
-                        <p className="text-sm text-gray-500">Nhập ý tưởng, AI sẽ tự động chọn thẻ phong cách phù hợp nhất.</p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-4 p-3 neu-pressed rounded-xl bg-gray-50/50">
-                    <div className="p-2 bg-emerald-100 text-emerald-600 rounded-full shrink-0"><ImageIcon size={20} /></div>
-                    <div>
-                        <h4 className="font-bold text-gray-700">Cảm hứng từ Hình ảnh</h4>
-                        <p className="text-sm text-gray-500">Tải ảnh lên để AI phân tích và đề xuất âm nhạc dựa trên cảm xúc bức ảnh.</p>
-                    </div>
-                </div>
-                 <div className="flex items-start gap-4 p-3 neu-pressed rounded-xl bg-gray-50/50">
-                    <div className="p-2 bg-purple-100 text-purple-600 rounded-full shrink-0"><Sliders size={20} /></div>
-                    <div>
-                        <h4 className="font-bold text-gray-700">Tối ưu cho Suno v5</h4>
-                        <p className="text-sm text-gray-500">Hỗ trợ đầy đủ các tham số nâng cao, cấu trúc bài hát và thẻ Meta.</p>
-                    </div>
-                </div>
-            </div>
-
-            <button 
-                onClick={() => setShowWelcome(false)}
-                className="w-full neu-btn py-4 text-lg font-bold text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 shadow-lg border-none"
-            >
-                Bắt đầu sáng tạo ngay 🚀
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Guide Modal */}
-      {showGuide && (
-         <div 
-         onClick={() => setShowGuide(false)}
-         className="fixed inset-0 bg-gray-200/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all"
-       >
-         <div 
-           onClick={(e) => e.stopPropagation()}
-           className="neu-flat p-6 max-w-2xl w-full relative animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
-         >
-           <button 
-             onClick={() => setShowGuide(false)}
-             className="absolute top-4 right-4 neu-icon-btn w-10 h-10 text-gray-500 hover:text-red-500"
-           >
-             <X size={20} />
-           </button>
-
-           <h2 className="text-2xl font-bold text-gray-700 mb-6 flex items-center gap-2 neu-text-shadow">
-               <BookOpen className="text-blue-600" /> Hướng dẫn sử dụng & Mẹo
-           </h2>
-
-           <div className="space-y-8">
-               
-               {/* Step by Step Workflow */}
-               <section>
-                   <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                       <Zap size={18} className="text-yellow-500" /> Quy trình tạo nhạc
-                   </h3>
-                   <div className="space-y-4">
-                       <div className="flex gap-4 items-start">
-                           <div className="bg-purple-100 text-purple-700 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">1</div>
-                           <div>
-                               <p className="font-bold text-gray-700">Nhập ý tưởng hoặc Tải ảnh</p>
-                               <p className="text-sm text-gray-500">Nhập chủ đề vào "Trợ lý Gợi ý AI" hoặc tải ảnh lên để lấy cảm hứng.</p>
-                           </div>
-                       </div>
-                       <div className="flex gap-4 items-start">
-                           <div className="bg-purple-100 text-purple-700 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">2</div>
-                           <div>
-                               <p className="font-bold text-gray-700">Chọn Thẻ phong cách (Style)</p>
-                               <p className="text-sm text-gray-500">Bấm "Gợi ý thẻ" hoặc chọn thủ công các thể loại, nhạc cụ, cảm xúc bên dưới. Kết quả sẽ hiện ở ô <strong>Prompt Output</strong>.</p>
-                           </div>
-                       </div>
-                       <div className="flex gap-4 items-start">
-                           <div className="bg-purple-100 text-purple-700 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">3</div>
-                           <div>
-                               <p className="font-bold text-gray-700">Tạo Lời & Cấu trúc</p>
-                               <p className="text-sm text-gray-500">Bấm nút "AI Tạo lời". Bạn có thể chỉnh sửa, thêm các thẻ cấu trúc như [Chorus], [Bridge].</p>
-                           </div>
-                       </div>
-                   </div>
-               </section>
-
-               {/* Mapping to Suno */}
-               <section className="neu-pressed p-5 rounded-xl bg-gray-50/50">
-                   <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                       <Rocket size={18} className="text-red-500" /> Cách dán vào Suno (Custom Mode)
-                   </h3>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <div className="space-y-2">
-                           <div className="font-bold text-xs text-gray-400 uppercase">App này (Đường Thọ AI)</div>
-                           <div className="neu-flat-sm p-3 text-sm font-semibold text-gray-600 bg-white">
-                               Prompt Output (Các thẻ Tag)
-                           </div>
-                           <div className="flex justify-center text-gray-400"><ArrowRight className="rotate-90 md:rotate-0" /></div>
-                           <div className="font-bold text-xs text-gray-400 uppercase">Suno AI</div>
-                           <div className="neu-pressed p-3 text-sm font-bold text-purple-700 border border-purple-200">
-                               Style of Music
-                           </div>
-                       </div>
-
-                       <div className="space-y-2">
-                           <div className="font-bold text-xs text-gray-400 uppercase">App này (Đường Thọ AI)</div>
-                           <div className="neu-flat-sm p-3 text-sm font-semibold text-gray-600 bg-white">
-                               Lời & Cấu trúc (Lyrics)
-                           </div>
-                           <div className="flex justify-center text-gray-400"><ArrowRight className="rotate-90 md:rotate-0" /></div>
-                           <div className="font-bold text-xs text-gray-400 uppercase">Suno AI</div>
-                           <div className="neu-pressed p-3 text-sm font-bold text-purple-700 border border-purple-200">
-                               Lyrics
-                           </div>
-                       </div>
-                   </div>
-                   <p className="text-xs text-gray-500 mt-4 italic text-center">
-                       *Đừng quên bật chế độ <strong>Custom Mode</strong> trên Suno để thấy các ô này.
-                   </p>
-               </section>
-           </div>
-         </div>
-       </div>
-      )}
     </div>
   );
 };
