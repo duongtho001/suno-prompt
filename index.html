@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suno AI Prompt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Changed background to standard neumorphic grey */
+            --bg-color: #E0E5EC;
+            --text-main: #4A5568;
+            --text-light: #A0AEC0;
+            --shadow-light: #ffffff;
+            /* Adjusted shadow to match new background */
+            --shadow-dark: #a3b1c6;
+            --primary: #6D28D9;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Quicksand', 'Nunito', sans-serif;
+        }
+        
+        /* Neumorphism Utilities */
+        .neu-flat {
+            background: var(--bg-color);
+            box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+        
+        .neu-flat-sm {
+            background: var(--bg-color);
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            border-radius: 12px;
+        }
+
+        .neu-pressed {
+            background: var(--bg-color);
+            box-shadow: inset 6px 6px 10px 0 var(--shadow-dark), inset -6px -6px 10px 0 var(--shadow-light);
+            border-radius: 16px;
+            border: none;
+        }
+
+        .neu-btn {
+            background: var(--bg-color);
+            box-shadow: 6px 6px 10px var(--shadow-dark), -6px -6px 10px var(--shadow-light);
+            border-radius: 50px;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .neu-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 8px 8px 12px var(--shadow-dark), -8px -8px 12px var(--shadow-light);
+        }
+
+        .neu-btn:active, .neu-btn.active {
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+            transform: translateY(0);
+            color: var(--primary);
+        }
+
+        .neu-input {
+            background: var(--bg-color);
+            box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+            border-radius: 12px;
+            border: none;
+            color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        .neu-input:focus {
+            outline: none;
+            box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light), 0 0 0 2px rgba(109, 40, 217, 0.2);
+        }
+
+        .neu-text-shadow {
+            text-shadow: 2px 2px 4px rgba(163, 177, 198, 0.4), -2px -2px 4px rgba(255, 255, 255, 0.8);
+        }
+        
+        .neu-icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-color);
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+        
+        .neu-icon-btn:hover {
+            color: var(--primary);
+            transform: scale(1.05);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 5px;
+            border: 2px solid #E0E5EC;
+        }
+        ::-webkit-scrollbar-track {
+            background: #E0E5EC;
+        }
+
+        /* Toast Animation */
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .toast-enter {
+            animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "@google/genai": "https://esm.run/@google/genai"
+  }
+}
+</script>
+</head>
+<body class="antialiased selection:bg-purple-200 selection:text-purple-900">
+    <div id="root"></div>
+</body>
+</html>
